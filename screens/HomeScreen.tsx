@@ -18,7 +18,7 @@ import { useAuth } from '../context/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
 
 // Define API base URL
-const API_BASE_URL = 'http://192.168.31.69:8000/api';
+const API_BASE_URL = 'https://fh-washroom-api.sarwar.com.bd/api';
 
 // Configure axios defaults
 axios.defaults.baseURL = API_BASE_URL;
