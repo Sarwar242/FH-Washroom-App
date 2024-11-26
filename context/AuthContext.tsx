@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signIn = useCallback(async (name: string, employeeId: string) => {
     try {
-      const response = await axios.post("http://192.168.31.69:8000/api/login", {
+      const response = await axios.post(`https://fh-washroom-api.sarwar.com.bd/api/login`, {
         name,
         employee_id: employeeId,
       });
