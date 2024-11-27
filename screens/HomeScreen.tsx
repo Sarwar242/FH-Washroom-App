@@ -154,13 +154,14 @@ export const HomeScreen: React.FC = () => {
         />
         <Text style={styles.toiletNumber}>{toilet.number}</Text>
         {toilet.is_occupied && (
-          <>
+          <> 
+          {isOccupiedByUser && 
             <Text style={styles.occupiedBy}>
-              {isOccupiedByUser ? 'You' : toilet.occupied_by}
-            </Text>
+            You
+            </Text>}
             {toilet.time_remaining && (
               <Text style={styles.timeRemaining}>
-                {toilet.time_remaining}m remaining
+                {toilet?.time_remaining?.toFixed(2)}min remaining
               </Text>
             )}
           </>
@@ -296,7 +297,7 @@ const styles = StyleSheet.create({
     marginHorizontal: -5,
   },
   toiletCard: {
-    width: '31%',
+    width: '48%',
     margin: '1%',
     aspectRatio: 1,
     backgroundColor: '#f8f8f8',

@@ -45,11 +45,11 @@ export const LoginScreen: React.FC = () => {
         <View style={styles.formContainer}>
           <View style={styles.logoContainer}>
             <MaterialCommunityIcons 
-              name="toilet" 
+              name="bathtub" 
               size={64} 
               color="#4c669f" 
             />
-            <Text style={styles.title}>Office Toilet Finder</Text>
+            <Text style={styles.title}>Office Washrooms</Text>
             <Text style={styles.subtitle}>Find available toilets in your office</Text>
           </View>
 
