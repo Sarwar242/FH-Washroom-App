@@ -2,6 +2,7 @@ import axios from "axios";
 import { User } from "../helpers/types";
 import { createContext, ReactNode, useContext, useEffect, useState, useMemo, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { BASE_URL } from "../constants";
 
 interface AuthContextData {
   user: User | null;
@@ -32,6 +33,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       if (storedUser && storedToken) {
         setUser(JSON.parse(storedUser));
         axios.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+
+        // Initialize notifications if user is already logged in
+        // await NotificationService.initialize();
       }
     } catch (error) {
       console.error("Error loading storage data:", error);
@@ -42,8 +46,8 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   const signIn = useCallback(async (name: string, employeeId: string) => {
     try {
-      const response = await axios.post(`https://fh-washroom-api.sarwar.com.bd/api/login`, {
-        name,
+      const response = await axios.post(`${BASE_URL}/login`, {
+        name:name,
         employee_id: employeeId,
       });
       const { user, token } = response.data;

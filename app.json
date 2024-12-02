@@ -7,6 +7,11 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "extra": {
+      "BASE_URL": "https://fh-washroom-api.sarwar.com.bd/api",
+      "BASE_URL_PROD": "https://fh-washroom-api.sarwar.com.bd/api",
+      "BASE_URL_LOCAL": "http://192.168.31.69:8000/api"
+    },
     "splash": {
       "image": "./assets/splash-icon.png",
       "resizeMode": "contain",

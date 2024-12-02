@@ -16,12 +16,10 @@ import axios from 'axios';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAuth } from '../context/AuthContext';
 import { LinearGradient } from 'expo-linear-gradient';
-
-// Define API base URL
-const API_BASE_URL = 'https://fh-washroom-api.sarwar.com.bd/api';
+import { BASE_URL } from '../constants';
 
 // Configure axios defaults
-axios.defaults.baseURL = API_BASE_URL;
+axios.defaults.baseURL = BASE_URL;
 
 interface Toilet {
   id: number;
@@ -47,6 +45,7 @@ export const HomeScreen: React.FC = () => {
   const [washrooms, setWashrooms] = useState<Washroom[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [waitingForToilets, setWaitingForToilets] = useState<number[]>([]);
 
   // Setup axios interceptor for token
   useEffect(() => {
@@ -91,6 +90,8 @@ export const HomeScreen: React.FC = () => {
   const handleOccupy = async (toiletId: number) => {
     try {
       await axios.post(`/toilets/${toiletId}/occupy`);
+      // Remove from waiting list if successfully occupied
+      setWaitingForToilets(prev => prev.filter(id => id !== toiletId));
       fetchWashrooms();
     } catch (error: any) {
       if (error.response?.status === 401) {
@@ -118,50 +119,83 @@ export const HomeScreen: React.FC = () => {
     }
   };
 
-  const handleSignOut = async () => {
+  const handleJoinWaitlist = async (toiletId: number) => {
     try {
-      // Clean up axios headers before signing out
-      delete axios.defaults.headers.common['Authorization'];
-      await signOut();
-    } catch (error) {
-      console.error('Sign out error:', error);
-      Alert.alert('Error', 'Failed to sign out');
+      await axios.post(`/toilets/${toiletId}/join-waitlist`);
+      setWaitingForToilets(prev => [...prev, toiletId]);
+      Alert.alert(
+        'Added to Waitlist',
+        'You will be notified when this toilet becomes available.'
+      );
+    } catch (error: any) {
+      if (error.response?.status === 401) {
+        Alert.alert('Session Expired', 'Please login again');
+        await signOut();
+      } else {
+        Alert.alert('Error', 'Failed to join waitlist');
+      }
+      console.error('Join waitlist error:', error);
     }
   };
 
   const ToiletCard: React.FC<{ toilet: Toilet }> = ({ toilet }) => {
     const isOccupiedByUser = toilet.occupied_by === user?.name;
+    const isWaiting = waitingForToilets.includes(toilet.id);
+
+    const handleToiletPress = () => {
+      if (!toilet.is_occupied) {
+        handleOccupy(toilet.id);
+      } else if (isOccupiedByUser) {
+        handleRelease(toilet.id);
+      } else if (!isWaiting) {
+        Alert.alert(
+          'Toilet Occupied',
+          'Would you like to join the waiting list?',
+          [
+            {
+              text: 'Yes',
+              onPress: () => handleJoinWaitlist(toilet.id),
+            },
+            {
+              text: 'No',
+              style: 'cancel',
+            },
+          ]
+        );
+      }
+    };
 
     return (
       <TouchableOpacity
         style={[
           styles.toiletCard,
-          toilet.is_occupied && styles.occupiedToilet
+          toilet.is_occupied && styles.occupiedToilet,
+          isWaiting && styles.waitingToilet
         ]}
-        onPress={() => {
-          if (!toilet.is_occupied) {
-            handleOccupy(toilet.id);
-          } else if (isOccupiedByUser) {
-            handleRelease(toilet.id);
-          }
-        }}
-        disabled={toilet.is_occupied && !isOccupiedByUser}
+        onPress={handleToiletPress}
+        disabled={toilet.is_occupied && isOccupiedByUser}
       >
         <MaterialCommunityIcons
           name="toilet"
           size={24}
-          color={toilet.is_occupied ? '#ff4444' : '#4CAF50'}
+          color={toilet.is_occupied ? '#ff4444' : (isWaiting ? '#FFA500' : '#4CAF50')}
         />
         <Text style={styles.toiletNumber}>{toilet.number}</Text>
         {toilet.is_occupied && (
-          <> 
-          {isOccupiedByUser && 
-            <Text style={styles.occupiedBy}>
-            You
-            </Text>}
+          <>
+            {isOccupiedByUser ? (
+              <Text style={styles.occupiedBy}>You</Text>
+            ) : (
+              <>
+                <Text style={styles.occupiedBy}>Occupied</Text>
+                {isWaiting && (
+                  <Text style={styles.waitingText}>Waiting</Text>
+                )}
+              </>
+            )}
             {toilet.time_remaining && (
               <Text style={styles.timeRemaining}>
-                {toilet?.time_remaining?.toFixed(2)}min remaining
+                {toilet.time_remaining.toFixed(2)}min remaining
               </Text>
             )}
           </>
@@ -170,6 +204,7 @@ export const HomeScreen: React.FC = () => {
     );
   };
 
+  // Rest of the component remains the same...
   const WashroomSection: React.FC<{ washroom: Washroom }> = ({ washroom }) => (
     <View style={styles.washroomSection}>
       <View style={styles.washroomHeader}>
@@ -205,7 +240,7 @@ export const HomeScreen: React.FC = () => {
             <Text style={styles.welcomeText}>Welcome,</Text>
             <Text style={styles.userName}>{user?.name}</Text>
           </View>
-          <TouchableOpacity onPress={handleSignOut} style={styles.logoutButton}>
+          <TouchableOpacity onPress={signOut} style={styles.logoutButton}>
             <MaterialCommunityIcons name="logout" size={24} color="#fff" />
           </TouchableOpacity>
         </View>
@@ -226,6 +261,7 @@ export const HomeScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
+  // Previous styles remain the same...
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
@@ -309,6 +345,9 @@ const styles = StyleSheet.create({
   occupiedToilet: {
     backgroundColor: '#ffebee',
   },
+  waitingToilet: {
+    backgroundColor: '#FFF3E0',
+  },
   toiletNumber: {
     marginTop: 5,
     fontSize: 16,
@@ -319,6 +358,12 @@ const styles = StyleSheet.create({
     color: '#666',
     marginTop: 5,
     textAlign: 'center',
+  },
+  waitingText: {
+    fontSize: 11,
+    color: '#FFA500',
+    fontWeight: '500',
+    marginTop: 2,
   },
   timeRemaining: {
     fontSize: 11,
