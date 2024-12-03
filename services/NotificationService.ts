@@ -2,126 +2,75 @@ import messaging from '@react-native-firebase/messaging';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import { Alert, Platform } from 'react-native';
+import { BASE_URL } from '../constants';
 
 class NotificationService {
-    // Initialize Firebase messaging and request permissions
     async initialize() {
         try {
-            // Check if we have permission
-            const authStatus = await messaging().requestPermission();
-            const enabled = authStatus === messaging.AuthorizationStatus.AUTHORIZED;
-
-            if (!enabled) {
-                console.warn('User has not granted notification permissions');
+            // Check platform support
+            if (Platform.OS !== 'ios' && Platform.OS !== 'android') {
+                console.warn('Notifications not supported on this platform');
                 return false;
             }
 
-            // Get the token
+            // Check if messaging is supported
+            if (!messaging().isSupported()) {
+                console.warn('Firebase messaging is not supported');
+                return false;
+            }
+
+            // Request permissions
+            const authStatus = await messaging().requestPermission();
+            const enabled = 
+                authStatus === messaging.AuthorizationStatus.AUTHORIZED ||
+                authStatus === messaging.AuthorizationStatus.PROVISIONAL;
+
+            if (!enabled) {
+                console.warn('Authorization status:', authStatus);
+                return false;
+            }
+
+            // Get and register token
             const token = await this.getFCMToken();
-            
-            // Register token with our backend
             if (token) {
                 await this.registerTokenWithBackend(token);
             }
 
-            // Set up token refresh listener
+            // Set up listeners
             this.setupTokenRefreshListener();
-            
-            // Set up notification handlers
             this.setupNotificationHandlers();
 
             return true;
         } catch (error) {
-            console.error('Failed to initialize notifications:', error);
+            console.error('Notification initialization error:', error);
             return false;
         }
     }
 
-    // Get the FCM token, creating it if necessary
     private async getFCMToken() {
         try {
+            // Check if token exists in storage first
+            const storedToken = await AsyncStorage.getItem('fcmToken');
+            if (storedToken) return storedToken;
+
+            // Get new token
             const token = await messaging().getToken();
             await AsyncStorage.setItem('fcmToken', token);
             return token;
         } catch (error) {
-            console.error('Failed to get FCM token:', error);
+            console.error('Token retrieval error:', error);
             return null;
         }
     }
 
-    // Register the token with our backend
     private async registerTokenWithBackend(token: string) {
         try {
-            await axios.post('/notifications/register-token', {
+            await axios.post(`${BASE_URL}/notifications/register-token`, {
                 token,
-                device_type: Platform.OS // 'ios' or 'android'
+                device_type: Platform.OS
             });
         } catch (error) {
-            console.error('Failed to register token with backend:', error);
-        }
-    }
-
-    // Handle token refresh
-    private setupTokenRefreshListener() {
-        messaging().onTokenRefresh(async (token) => {
-            await AsyncStorage.setItem('fcmToken', token);
-            await this.registerTokenWithBackend(token);
-        });
-    }
-
-    // Set up handlers for different notification scenarios
-    private setupNotificationHandlers() {
-        // Handle foreground messages
-        messaging().onMessage(async remoteMessage => {
-            this.handleNotification(remoteMessage);
-        });
-
-        // Handle background/quit state messages
-        messaging().setBackgroundMessageHandler(async remoteMessage => {
-            this.handleNotification(remoteMessage);
-        });
-
-        // Handle notification open events
-        messaging().onNotificationOpenedApp(remoteMessage => {
-            this.handleNotificationOpen(remoteMessage);
-        });
-    }
-
-    // Handle incoming notifications
-    private handleNotification(remoteMessage: any) {
-        const { notification, data } = remoteMessage;
-
-        switch (data.type) {
-            case 'toilet_available':
-                Alert.alert(
-                    notification.title,
-                    notification.body,
-                    [
-                        {
-                            text: 'View',
-                            onPress: () => this.navigateToToilet(data.toilet_id)
-                        },
-                        { text: 'Dismiss', style: 'cancel' }
-                    ]
-                );
-                break;
-
-            case 'session_expiring':
-                Alert.alert(
-                    notification.title,
-                    notification.body,
-                    [
-                        {
-                            text: 'Extend Time',
-                            onPress: () => this.extendToiletTime(data.toilet_id)
-                        },
-                        { text: 'OK', style: 'cancel' }
-                    ]
-                );
-                break;
-
-            default:
-                Alert.alert(notification.title, notification.body);
+            console.error('Backend token registration failed:', error);
         }
     }
 
@@ -133,16 +82,95 @@ class NotificationService {
         }
     }
 
-    // Navigate to specific toilet
-    private navigateToToilet(toiletId: string) {
-        // You'll need to implement navigation logic here
-        // This will depend on your navigation setup
+    private setupTokenRefreshListener() {
+        return messaging().onTokenRefresh(async (token) => {
+            try {
+                await AsyncStorage.setItem('fcmToken', token);
+                await this.registerTokenWithBackend(token);
+            } catch (error) {
+                console.error('Token refresh error:', error);
+            }
+        });
     }
 
-    // Extend toilet time
+    private setupNotificationHandlers() {
+        // Foreground message handler
+        const unsubscribeForeground = messaging().onMessage(async remoteMessage => {
+            this.handleNotification(remoteMessage);
+        });
+
+        // Background message handler
+        messaging().setBackgroundMessageHandler(async remoteMessage => {
+            this.handleNotification(remoteMessage);
+        });
+
+        // Notification opened handler
+        const unsubscribeOpenedNotification = messaging().onNotificationOpenedApp(
+            remoteMessage => {
+                this.handleNotificationOpen(remoteMessage);
+            }
+        );
+
+        // Return unsubscribe functions if needed
+        return () => {
+            unsubscribeForeground();
+            unsubscribeOpenedNotification();
+        };
+    }
+
+    private handleNotification(remoteMessage: any) {
+        const { notification, data } = remoteMessage;
+
+        if (!notification) return;
+
+        switch (data?.type) {
+            case 'toilet_available':
+                this.showToiletAvailableNotification(notification, data);
+                break;
+            case 'session_expiring':
+                this.showSessionExpiringNotification(notification, data);
+                break;
+            default:
+                Alert.alert(notification.title || 'Notification', notification.body || '');
+        }
+    }
+
+    private showToiletAvailableNotification(notification: any, data: any) {
+        Alert.alert(
+            notification.title,
+            notification.body,
+            [
+                {
+                    text: 'View',
+                    onPress: () => this.navigateToToilet(data.toilet_id)
+                },
+                { text: 'Dismiss', style: 'cancel' }
+            ]
+        );
+    }
+
+    private showSessionExpiringNotification(notification: any, data: any) {
+        Alert.alert(
+            notification.title,
+            notification.body,
+            [
+                {
+                    text: 'Extend Time',
+                    onPress: () => this.extendToiletTime(data.toilet_id)
+                },
+                { text: 'OK', style: 'cancel' }
+            ]
+        );
+    }
+
+    private navigateToToilet(toiletId: string) {
+        // Implement navigation logic 
+        console.log(`Navigating to toilet: ${toiletId}`);
+    }
+
     private async extendToiletTime(toiletId: string) {
         try {
-            await axios.post(`/toilets/${toiletId}/extend`);
+            await axios.post(`${BASE_URL}/toilets/${toiletId}/extend`);
             Alert.alert('Success', 'Time extended successfully');
         } catch (error) {
             Alert.alert('Error', 'Failed to extend time');

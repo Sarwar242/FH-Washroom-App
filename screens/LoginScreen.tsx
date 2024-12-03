@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   View,
   Text,
@@ -13,13 +13,21 @@ import {
 } from 'react-native';
 import { useAuth } from '../context/AuthContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import NotificationService from '../services/NotificationService';
 
 export const LoginScreen: React.FC = () => {
   const [name, setName] = useState('');
   const [employeeId, setEmployeeId] = useState('');
   const [loading, setLoading] = useState(false);
   const { signIn } = useAuth();
+  useEffect(() => {
+    // Initialize notifications
+    const initializeNotifications = async () => {
+      await NotificationService.initialize();
+    };
 
+    initializeNotifications();
+  }, []);
   const handleLogin = async () => {
     if (!name.trim() || !employeeId.trim()) {
       Alert.alert('Error', 'Please fill in all fields');
