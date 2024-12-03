@@ -70,7 +70,6 @@ export const ToiletCard: React.FC<ToiletCardProps> = ({
         isWaiting && styles.waitingToilet
       ]}
       onPress={handleToiletPress}
-      disabled={toilet.is_occupied && !isOccupiedByUser}
     >
       <MaterialCommunityIcons
         name="toilet"
