@@ -10,7 +10,10 @@
     "extra": {
       "BASE_URL": "https://fh-washroom-api.sarwar.com.bd/api",
       "BASE_URL_PROD": "https://fh-washroom-api.sarwar.com.bd/api",
-      "BASE_URL_LOCAL": "http://192.168.31.69:8000/api"
+      "BASE_URL_LOCAL": "http://192.168.31.69:8000/api",
+      "eas": {
+        "projectId": "c1c0f76b-0ca6-4c1c-ac89-6faae44179ef"
+      }
     },
     "splash": {
       "image": "./assets/splash-icon.png",
@@ -21,6 +24,7 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.sarwar.fhwashroomapp",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -28,6 +32,7 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "owner": "sarwar242"
   }
 }

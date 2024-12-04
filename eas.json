@@ -1,0 +1,23 @@
+{
+    "cli": {
+      "version": ">= 2.0.0",
+      "appVersionSource": "remote"
+    },
+    "build": {
+        "production": {
+          "android": {
+            "buildType": "apk"
+          }, 
+          "development": {
+          "android": {
+            "buildType": "apk"
+          },
+          "environment": {
+            "API_URL": "https://fh-washroom-api.sarwar.com.bd/api",
+            "NODE_ENV": "development"
+          }
+        }
+      }
+  }
+}
+  

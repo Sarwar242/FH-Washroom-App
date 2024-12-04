@@ -1,8 +1,18 @@
 apply plugin: 'com.google.gms.google-services'
+implementation platform('com.google.firebase:firebase-bom:32.1.1')
+implementation 'com.google.firebase:firebase-messaging'
+
 apply plugin: "com.sarwar.fhwashroomapp"
+
+defaultConfig {
+        applicationId "com.sarwar.fhwashroomapp"
+        minSdkVersion 21
+        targetSdkVersion 33
+}
 
 project.ext.envConfigFiles = [
     debug: ".env",
     release: ".env.production",
 ]
+ 
 apply from: project(':react-native-config').projectDir.getPath() + "/dotenv.gradle"
