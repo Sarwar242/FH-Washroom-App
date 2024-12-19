@@ -1,5 +1,31 @@
+ext {
+    compileSdkVersion = 33   // or your target SDK version
+    buildToolsVersion = '33.0.0'
+    reactNativeVersion = '0.76.5' // Use your project's RN version
+    minSdkVersion = 21
+    targetSdkVersion = 33
+}
+
 buildscript {
-  dependencies {
-    classpath 'com.google.gms:google-services:4.3.15'
-  }
+      ext.kotlin_version = '1.6.10' // Update to a compatible version
+    repositories {
+        google() // Ensure this is present
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:7.2.1' // Match your project's AGP version
+        classpath 'com.google.gms:google-services:4.3.15' // Add this line
+        classpath("com.facebook.react:react-native-gradle-plugin")
+    }
+}
+
+allprojects {
+    repositories {
+        mavenLocal()
+        google()
+        mavenCentral()
+        maven {
+            url("$rootDir/../node_modules/react-native/android")
+        }
+    }
 }

@@ -3,6 +3,7 @@ import { User } from "../helpers/types";
 import { createContext, ReactNode, useContext, useEffect, useState, useMemo, useCallback } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { BASE_URL } from "../constants";
+import { registerForPushNotifications } from "../services/NewNFService";
 
 interface AuthContextData {
   user: User | null;
@@ -36,6 +37,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
         // Initialize notifications if user is already logged in
         // await NotificationService.initialize();
+        registerForPushNotifications();
       }
     } catch (error) {
       console.error("Error loading storage data:", error);

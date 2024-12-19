@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1002631591352",
+    "project_id": "fh-washroom-firebase",
+    "storage_bucket": "fh-washroom-firebase.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1002631591352:android:4134720f44d779ce8d4b4d",
+        "android_client_info": {
+          "package_name": "com.sarwar.fhwashroomapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCKjirPdzzfyGff77Sx9yTPybKcrNE4JPA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
